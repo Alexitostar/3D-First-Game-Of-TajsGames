@@ -2,26 +2,26 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Midnight Sparkle Pursuit - Lateral 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Midnight Sparkle Pursuit - Lateral Fixed</title>
 <!-- [Los estilos CSS van aquí (Parte 2)] -->
 </head>
 <body>
 
-    <!-- Pantalla de Inicio (Evita bloqueos de audio del navegador) -->
+    <!-- Pantalla de Inicio (Necesaria para desbloquear el audio en móviles) -->
     <div id="start-screen">
-        <h1>MIDNIGHT SPARKLE PURSUIT</h1>
-        <p>Observa la persecución mágica en el espacio profundo</p>
+        <h1 style="font-size: 26px; margin-bottom: 10px; color: #00ffff;">MIDNIGHT SPARKLE</h1>
+        <p style="font-size: 14px; padding: 0 20px; color: #a3a3c2;">Observa la persecución mágica en el espacio profundo</p>
         <button class="start-btn" onclick="startGame()">Comenzar Huida</button>
     </div>
 
-    <!-- Interfaz de datos superior derecha -->
+    <!-- Interfaz de datos del juego (Muestra metros y segundos) -->
     <div id="ui-layer">
         <div>DISTANCIA: <span id="distance">8.0</span> m</div>
         <div>TIEMPO: <span id="timer">0</span>s / 60s</div>
     </div>
 
-    <!-- Botones de dirección superiores (Ver diferentes lados) -->
+    <!-- Controles de Flechas Superiores para desplazar la cámara -->
     <div id="directional-controls">
         <button class="nav-btn" onclick="moveCamera('left')">←</button>
         <button class="nav-btn" onclick="moveCamera('down')">↓</button>
@@ -29,13 +29,13 @@
         <button class="nav-btn" onclick="moveCamera('right')">→</button>
     </div>
 
-    <!-- Botón de Rayo (Ir más rápido) -->
+    <!-- Botón de Rayo Inferior para ganar velocidad -->
     <button id="speed-btn" onclick="useSpeedBoost()">⚡</button>
 
-    <!-- Contenedor donde se renderizan los gráficos 3D de Three.js -->
+    <!-- Contenedor donde Three.js dibuja el universo 3D -->
     <div id="canvas-container"></div>
 
-    <!-- Contenedor del Jumpscare (Forzado a 1000x1000px) -->
+    <!-- Capa del Jumpscare -->
     <div id="jumpscare-screen">
         <img id="jumpscare-image" src="scary.png" alt="Jumpscare">
         <button class="restart-btn" onclick="location.reload()">Reintentar</button>
@@ -44,18 +44,18 @@
     <!-- Pantalla de Victoria -->
     <div id="win-screen">
         <h1>¡LOGRASTE ESCAPAR!</h1>
-        <p style="font-size: 20px; color: #fff;">Midnight Sparkle no pudo alcanzarte esta vez.</p>
+        <p style="font-size: 16px; color: #fff; margin-bottom: 20px;">Midnight Sparkle no pudo alcanzarte.</p>
         <button class="start-btn" onclick="location.reload()">Jugar de nuevo</button>
     </div>
 
-    <!-- Elementos de Audio Locales -->
+    <!-- Reproductores de Audio nativos -->
     <audio id="bg-music" src="back.mp3" loop></audio>
     <audio id="jump-music" src="jump.mp3" loop></audio>
 
-    <!-- Scripts del Motor Gráfico Three.js y el Cargador GLTF -->
+    <!-- Librerías de gráficos 3D desde servidores CDN seguros -->
     <script src="https://cloudflare.com"></script>
     <script src="https://jsdelivr.net"></script>
-<!-- [El código JavaScript va aquí (Parte 3, 4 y 5)] -->
+<!-- [El código JavaScript de programación va aquí (Partes 3, 4 y 5)] -->
 </body>
 </html>
 <style>
@@ -63,25 +63,30 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background-color: #000;
-        font-family: 'Courier New', Courier, monospace;
+        background-color: #02000A;
+        font-family: sans-serif;
         user-select: none;
+        width: 100vw;
+        height: 100vh;
     }
 
     #canvas-container {
         width: 100vw;
         height: 100vh;
-        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
     }
 
-    #start-screen {
-        position: absolute;
+    #start-screen, #win-screen {
+        position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: radial-gradient(circle, #1a0033 0%, #000 100%);
-        z-index: 200;
+        background: radial-gradient(circle, #1a0033 0%, #020005 100%);
+        z-index: 50;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -90,95 +95,84 @@
         text-align: center;
     }
 
+    #win-screen {
+        z-index: 60;
+        display: none;
+        color: #00ffcc;
+    }
+
     .start-btn {
-        padding: 15px 40px;
+        padding: 12px 30px;
         background: linear-gradient(45deg, #7b00ff, #00d2ff);
         border: 2px solid #00ffff;
         color: white;
-        font-size: 20px;
+        font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        border-radius: 30px;
-        box-shadow: 0 0 20px #00ffff;
+        border-radius: 25px;
+        box-shadow: 0 0 15px #00ffff;
         text-transform: uppercase;
         margin-top: 20px;
     }
 
     #ui-layer {
         position: absolute;
-        top: 20px;
-        right: 20px;
+        top: 15px;
+        right: 15px;
         color: #00ffff;
-        font-size: 20px;
+        font-size: 16px;
         z-index: 10;
-        text-shadow: 2px 2px #000;
+        text-shadow: 1px 1px 2px #000;
         pointer-events: none;
         display: none;
         text-align: right;
     }
 
-    /* Botones de dirección superiores (Flechas para mover cámara) */
     #directional-controls {
         position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 15;
+        top: 15px;
+        left: 15px;
+        z-index: 10;
         display: none;
-        gap: 15px;
+        gap: 8px;
     }
 
     .nav-btn {
-        width: 50px;
-        height: 50px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid #00ffff;
+        width: 42px;
+        height: 42px;
+        background: rgba(0, 0, 0, 0.75);
+        border: 1px solid #00ffff;
         color: #00ffff;
-        font-size: 24px;
-        font-weight: bold;
+        font-size: 18px;
         cursor: pointer;
-        border-radius: 10px;
-        box-shadow: 0 0 10px #00ffff;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: 0.2s;
     }
 
-    .nav-btn:active {
-        background: #00ffff;
-        color: #000;
-    }
-
-    /* Botón de Rayo inferior */
     #speed-btn {
         position: absolute;
-        bottom: 40px;
+        bottom: 35px;
         left: 50%;
         transform: translateX(-50%);
-        width: 80px;
-        height: 80px;
+        width: 75px;
+        height: 75px;
         background: linear-gradient(45deg, #ffcc00, #ff6600);
-        border: 3px solid #ffcc00;
+        border: 2px solid #ffcc00;
         color: white;
-        font-size: 35px;
+        font-size: 30px;
         cursor: pointer;
-        z-index: 15;
+        z-index: 10;
         border-radius: 50%;
-        box-shadow: 0 0 20px #ffcc00;
+        box-shadow: 0 0 15px #ffcc00;
         display: none;
         align-items: center;
         justify-content: center;
-        transition: 0.2s;
-    }
-
-    #speed-btn:active {
-        transform: translateX(-50%) scale(0.9);
-        box-shadow: 0 0 5px #ffcc00;
     }
 
     #jumpscare-screen {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
@@ -192,16 +186,16 @@
     }
 
     #jumpscare-image {
-        width: 1000px;
-        height: 1000px;
-        max-width: 100vw;
-        max-height: 100vh;
+        width: 90vw;
+        height: 90vw;
+        max-width: 550px;
+        max-height: 550px;
         object-fit: contain;
     }
 
     .restart-btn {
-        margin-top: 20px;
-        padding: 12px 30px;
+        margin-top: 25px;
+        padding: 12px 35px;
         background: linear-gradient(45deg, #ff0055, #990022);
         border: 2px solid #ff0055;
         color: white;
@@ -209,143 +203,80 @@
         font-weight: bold;
         cursor: pointer;
         border-radius: 20px;
-        box-shadow: 0 0 10px #ff0055;
         text-transform: uppercase;
-    }
-
-    #win-screen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: radial-gradient(circle, #1a0033 0%, #000 100%);
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
-        color: #00ffcc;
-        font-size: 40px;
-        text-align: center;
+        box-shadow: 0 0 10px #ff0055;
     }
 </style>
 <script>
-    // Inicialización del motor 3D
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x050010, 0.015); // Niebla espacial sutil
+    scene.fog = new THREE.FogExp2(0x02000a, 0.02);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimizado para pantallas táctiles
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     container.appendChild(renderer.domElement);
 
     const bgMusic = document.getElementById('bg-music');
     const jumpMusic = document.getElementById('jump-music');
 
-    // --- POSICIONAMIENTO DE CÁMARA LATERAL (MIRA COMO TU BOCETO) ---
-    let baseCamX = 8, baseCamY = 1.5, baseCamZ = 3;
+    // Ángulo de visión lateral fijo (Vista de perfil de los corredores)
+    let baseCamX = 6, baseCamY = 1.2, baseCamZ = 3;
     camera.position.set(baseCamX, baseCamY, baseCamZ);
-    camera.lookAt(0, 0, 2); // Enfoca al centro del puente donde corren
+    camera.lookAt(0, -0.2, 1.5);
 
-    // --- ENTORNO: GALAXIA ESPACIAL DE FONDO ---
+    // Render de partículas de estrellas de la galaxia
     const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 4000;
+    const starsCount = 1500;
     const starPositions = new Float32Array(starsCount * 3);
-    const starColors = new Float32Array(starsCount * 3);
-
+    
     for(let i = 0; i < starsCount * 3; i += 3) {
-        const radius = 150 + Math.random() * 150;
-        const u = Math.random();
-        const v = Math.random();
-        const theta = u * 2.0 * Math.PI;
-        const phi = Math.acos(2.0 * v - 1.0);
-        
+        const radius = 100 + Math.random() * 100;
+        const u = Math.random(); const v = Math.random();
+        const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0);
         starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
         starPositions[i+1] = radius * Math.sin(phi) * Math.sin(theta);
         starPositions[i+2] = radius * Math.cos(phi);
-
-        const r = Math.random();
-        if (r > 0.6) {
-            starColors[i] = 0.6; starColors[i+1] = 0.1; starColors[i+2] = 1.0; // Púrpura cósmico
-        } else if (r > 0.3) {
-            starColors[i] = 0.0; starColors[i+1] = 0.7; starColors[i+2] = 1.0; // Celeste mágico
-        } else {
-            starColors[i] = 1.0; starColors[i+1] = 1.0; starColors[i+2] = 1.0; // Blanco brillante
-        }
     }
     starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    starsGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-    const starsMaterial = new THREE.PointsMaterial({ size: 1.0, vertexColors: true, transparent: true, opacity: 0.85 });
-    const starField = new THREE.Points(starsGeometry, starsMaterial);
+    const starField = new THREE.Points(starsGeometry, new THREE.PointsMaterial({ size: 0.8, color: 0x00ffff, transparent: true, opacity: 0.8 }));
     scene.add(starField);
 
-    // --- ENTORNO: PUENTE CELESTE MÁGICO ---
-    const bridgeGroup = new THREE.Group();
-    const bridgeWidth = 4.0;
-    const bridgeLength = 200;
-    
+    // Diseño del Puente de Magia Celeste
     const bridgeMat = new THREE.MeshStandardMaterial({ 
-        color: 0x00bcff, 
-        emissive: 0x0044cc, 
-        emissiveIntensity: 2.0,
-        transparent: true,
-        opacity: 0.7,
-        roughness: 0.1
+        color: 0x00bcff, emissive: 0x0033aa, emissiveIntensity: 2.0, transparent: true, opacity: 0.65 
     });
-    
-    const bridgeGeo = new THREE.PlaneGeometry(bridgeWidth, bridgeLength);
-    const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
+    const bridge = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 150), bridgeMat);
     bridge.rotation.x = -Math.PI / 2;
-    bridge.position.set(0, -1.5, 0); // Extendido a lo largo del eje Z
-    bridgeGroup.add(bridge);
+    bridge.position.set(0, -1.2, 0);
+    scene.add(bridge);
 
-    // Líneas neón laterales
-    const edgeGeo = new THREE.BoxGeometry(0.12, 0.12, bridgeLength);
-    const edgeMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    const leftEdge = new THREE.Mesh(edgeGeo, edgeMat);
-    leftEdge.position.set(-bridgeWidth/2, -1.44, 0);
-    const rightEdge = leftEdge.clone();
-    rightEdge.position.x = bridgeWidth/2;
-    bridgeGroup.add(leftEdge, rightEdge);
-    scene.add(bridgeGroup);
-
-    // Luces
-    const ambient = new THREE.AmbientLight(0x180b30, 0.5);
-    scene.add(ambient);
-
-    const monsterAura = new THREE.PointLight(0xff00ff, 4, 12); // Luz morada que envuelve a Midnight Sparkle
+    scene.add(new THREE.AmbientLight(0x0f0520, 0.6));
+    const monsterAura = new THREE.PointLight(0xff00ff, 4, 10);
     scene.add(monsterAura);
-    // --- CARGA DE MODELOS (.GLB) ---
     const loader = new THREE.GLTFLoader();
-    let playerMesh = null;
-    let monsterMesh = null;
-    let playerMixer = null;
-    let monsterMixer = null;
-    let playerFlashlight = null; // Linterna frontal
+    let playerMesh = null; let monsterMesh = null;
+    let playerMixer = null; let monsterMixer = null;
     const clock = new THREE.Clock();
 
-    // Cargar Jugador (A la derecha en el puente)
+    // Traer jugador (player.glb) y añadirle la linterna al frente
     loader.load('player.glb', function(gltf) {
         playerMesh = gltf.scene;
-        playerMesh.position.set(0, -1.5, 3); 
-        playerMesh.rotation.y = Math.PI; // Orientado de perfil corriendo al frente
-        playerMesh.scale.set(0.9, 0.9, 0.9);
+        playerMesh.position.set(0, -1.2, 2.5);
+        playerMesh.rotation.y = Math.PI; 
+        playerMesh.scale.set(0.7, 0.7, 0.7);
         scene.add(playerMesh);
 
-        // --- SISTEMA DE LINTERNA FRONTAL ---
-        playerFlashlight = new THREE.SpotLight(0xffffff, 5, 25, Math.PI / 5, 0.5, 1);
-        playerFlashlight.position.set(0, 0.8, 0);
-        
-        // Objetivo invisible delante para que el cono de luz apunte al frente
-        const lightTarget = new THREE.Object3D();
-        lightTarget.position.set(0, 0.8, 10); 
-        playerMesh.add(lightTarget);
-        playerFlashlight.target = lightTarget;
-        
-        playerMesh.add(playerFlashlight);
+        // Foco de la linterna frontal
+        const flashlight = new THREE.SpotLight(0xffffff, 6, 20, Math.PI / 6, 0.5, 1);
+        flashlight.position.set(0, 0.6, 0);
+        const targetObj = new THREE.Object3D();
+        targetObj.position.set(0, 0.6, 8);
+        playerMesh.add(targetObj);
+        flashlight.target = targetObj;
+        playerMesh.add(flashlight);
 
         if(gltf.animations.length > 0) {
             playerMixer = new THREE.AnimationMixer(playerMesh);
@@ -353,56 +284,50 @@
         }
     });
 
-    // Cargar Midnight Sparkle (monster.glb) persiguiendo desde la izquierda
+    // Traer al monstruo persecutor (monster.glb)
     loader.load('monster.glb', function(gltf) {
         monsterMesh = gltf.scene;
-        monsterMesh.scale.set(0.9, 0.9, 0.9);
+        monsterMesh.scale.set(0.7, 0.7, 0.7);
         scene.add(monsterMesh);
 
         if(gltf.animations.length > 0) {
             monsterMixer = new THREE.AnimationMixer(monsterMesh);
             monsterMixer.clipAction(gltf.animations).play();
         }
-        updateEntitiesPositions();
+        updatePositions();
     }, undefined, function(e) {
-        // Cubo morado de seguridad por si hay algún problema de carga local
-        monsterMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 1.2), new THREE.MeshStandardMaterial({color: 0x4a0082, emissive: 0x3a0066}));
+        // Objeto de respaldo si falla la carga local por CORS
+        monsterMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x4a0082}));
         scene.add(monsterMesh);
-        updateEntitiesPositions();
+        updatePositions();
     });
-    // --- LÓGICA GRÁFICA Y MECÁNICAS ---
-    let enemyDistance = 8.0; // Distancia inicial en metros entre ambos personajes
+    let enemyDistance = 8.0;
     let survivalTime = 0;
-    const targetTime = 60; 
     let gameActive = false;
 
-    function updateEntitiesPositions() {
-        if(playerMesh) {
-            playerMesh.position.set(0, -1.5, 3);
-        }
-        // El monstruo se acomoda atrás calculando la distancia en el puente (eje Z)
+    function updatePositions() {
+        if(playerMesh) playerMesh.position.set(0, -1.2, 2.0);
         if(monsterMesh) {
-            monsterMesh.position.set(0, -1.5, 3 - enemyDistance);
-            monsterAura.position.set(0, 0.2, 3 - enemyDistance);
+            monsterMesh.position.set(0, -1.2, 2.0 - enemyDistance);
+            monsterAura.position.set(0, 0, 2.0 - enemyDistance);
         }
     }
 
-    // Mueve la cámara según las flechas superiores de la interfaz
-    function moveCamera(direction) {
+    // Acción de las flechas superiores
+    function moveCamera(dir) {
         if(!gameActive) return;
-        if(direction === 'left') camera.position.x -= 0.5;
-        if(direction === 'right') camera.position.x += 0.5;
-        if(direction === 'up') camera.position.y += 0.5;
-        if(direction === 'down') camera.position.y -= 0.5;
-        camera.lookAt(0, 0, 2); // Mantiene el enfoque central fijo
+        if(dir === 'left') camera.position.x -= 0.4;
+        if(dir === 'right') camera.position.x += 0.4;
+        if(dir === 'up') camera.position.y += 0.4;
+        if(dir === 'down') camera.position.y -= 0.4;
+        camera.lookAt(0, -0.2, 1.5);
     }
 
-    // Función del botón del Rayo (Huye más rápido / Aleja al enemigo)
+    // Acción del botón del Rayo (Gana velocidad y aleja al monstruo)
     function useSpeedBoost() {
         if(!gameActive || enemyDistance <= 0) return;
-        
-        enemyDistance += 4.5; // Empuja a Midnight Sparkle hacia atrás
-        if(enemyDistance > 16.0) enemyDistance = 16.0;
+        enemyDistance += 4.0;
+        if(enemyDistance > 15.0) enemyDistance = 15.0;
     }
 
     function startGame() {
@@ -412,48 +337,36 @@
         document.getElementById('speed-btn').style.display = 'flex';
         
         gameActive = true;
-        bgMusic.play().catch(e => console.log(e));
+        bgMusic.play().catch(e => console.log("Audio play"));
 
-        // Bucle de acercamiento (Cada 100ms)
-        const gameLogicLoop = setInterval(() => {
-            if (!gameActive) { clearInterval(gameLogicLoop); return; }
-
-            let speedMultiplier = 1 + (survivalTime * 0.015);
-            enemyDistance -= (0.10 * speedMultiplier);
-
+        const logicInterval = setInterval(() => {
+            if (!gameActive) { clearInterval(logicInterval); return; }
+            
+            let speed = 0.09 + (survivalTime * 0.002);
+            enemyDistance -= speed;
+            
             document.getElementById('distance').innerText = Math.max(0, enemyDistance).toFixed(1);
-            updateEntitiesPositions();
+            updatePositions();
 
-            // Captura / Jumpscare
-            if(enemyDistance <= 0.8) {
-                triggerJumpscare();
+            if(enemyDistance <= 0.7) {
+                gameActive = false;
+                bgMusic.pause();
+                jumpMusic.play().catch(e=>console.log(e));
+                document.getElementById('jumpscare-screen').style.display = 'flex';
             }
         }, 100);
 
-        // Contador de supervivencia
-        const timeClockLoop = setInterval(() => {
-            if (!gameActive) { clearInterval(timeClockLoop); return; }
-
+        const timeInterval = setInterval(() => {
+            if (!gameActive) { clearInterval(timeInterval); return; }
             survivalTime++;
             document.getElementById('timer').innerText = survivalTime;
 
-            if(survivalTime >= targetTime) {
-                triggerWin();
+            if(survivalTime >= 60) {
+                gameActive = false;
+                bgMusic.pause();
+                document.getElementById('win-screen').style.display = 'flex';
             }
         }, 1000);
-    }
-
-    function triggerJumpscare() {
-        gameActive = false;
-        bgMusic.pause();
-        jumpMusic.play().catch(e => console.log(e));
-        document.getElementById('jumpscare-screen').style.display = 'flex';
-    }
-
-    function triggerWin() {
-        gameActive = false;
-        bgMusic.pause();
-        document.getElementById('win-screen').style.display = 'flex';
     }
 
     window.addEventListener('resize', () => {
@@ -462,31 +375,20 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Bucle de cuadros por segundo constante
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
-        
         if (playerMixer) playerMixer.update(delta);
         if (monsterMixer) monsterMixer.update(delta);
 
         if (gameActive) {
-            starField.rotation.y += 0.0006; // Rotación lenta cósmica
-
-            const timeSpace = performance.now() * 0.008;
-            bridgeMat.emissiveIntensity = 1.8 + Math.sin(timeSpace * 3) * 0.4;
-            
-            // Vaivén constante simulando movimiento lateral
-            camera.position.y = baseCamY + Math.sin(timeSpace) * 0.05;
+            starField.rotation.y += 0.0004;
+            bridgeMat.emissiveIntensity = 1.5 + Math.sin(performance.now() * 0.005) * 0.4;
         } else if (document.getElementById('jumpscare-screen').style.display === 'flex') {
-            camera.position.x += (Math.random() - 0.5) * 0.2;
-            camera.position.y += (Math.random() - 0.5) * 0.2;
+            camera.position.x += (Math.random() - 0.5) * 0.15;
+            camera.position.y += (Math.random() - 0.5) * 0.15;
         }
-
         renderer.render(scene, camera);
     }
-
     animate();
 </script>
-</body>
-</html>
