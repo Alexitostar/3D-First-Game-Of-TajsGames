@@ -1,394 +1,290 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Midnight Sparkle Pursuit - Lateral Fixed</title>
-<!-- [Los estilos CSS van aquí (Parte 2)] -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Midnight Sparkle Pursuit</title>
+<style>
+:root{--cyan:#55f7ff;--purple:#a34cff;--pink:#ff3edb}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02000a;color:white;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+#canvas-container{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 45%,#21104d 0%,#08051c 48%,#020008 100%)}
+#canvas-container canvas{display:block;width:100%;height:100%}
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(ellipse at center,#25104e 0%,rgba(5,0,18,.96) 72%);gap:14px}
+h1{font-size:clamp(30px,7vw,58px);line-height:1.05;margin:0;color:#b8fbff;text-shadow:0 0 10px #00d9ff,0 0 28px #8b24ff}
+.screen p{max-width:520px;color:#e4dfff;font-size:clamp(15px,3.8vw,19px);line-height:1.5;margin:4px 0 12px}
+button{border:1px solid var(--cyan);border-radius:14px;background:linear-gradient(135deg,#792bdb,#087fbd);color:white;font-weight:700;font-size:16px;padding:13px 22px;box-shadow:0 0 18px #00d9ff55;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.96)}
+#start-screen{display:flex}
+#win-screen,#jumpscare-screen{display:none}
+#win-screen{z-index:30}
+#jumpscare-screen{z-index:40;background:#000}
+#jumpscare-image{width:min(82vw,520px);height:min(70vh,520px);object-fit:contain}
+#hud{position:fixed;z-index:10;top:12px;left:12px;right:12px;display:none;justify-content:space-between;gap:10px;pointer-events:none}
+.hud-card{background:#08051dcc;border:1px solid #55f7ff88;border-radius:12px;padding:9px 12px;color:#c9fbff;font-weight:700;text-shadow:0 0 8px #00cfff}
+#distance,#timer{color:white}
+#controls{position:fixed;z-index:11;left:14px;bottom:18px;display:none;gap:8px;align-items:center}
+#controls button{width:54px;height:54px;padding:0;font-size:22px;background:#160c38dd}
+#boost{position:fixed;z-index:11;right:18px;bottom:20px;width:72px;height:72px;border-radius:50%;display:none;background:linear-gradient(135deg,#ffcf33,#ff6b00);border:2px solid #fff0a0;font-size:30px;box-shadow:0 0 24px #ff9d00aa}
+#loading{position:fixed;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);color:#c7faff;text-shadow:0 0 10px #00cfff;font-size:14px;text-align:center;pointer-events:none}
+#hint{position:fixed;z-index:10;bottom:102px;left:50%;transform:translateX(-50%);font-size:12px;color:#d7d0ff;background:#09051dbb;padding:7px 11px;border-radius:20px;display:none;white-space:nowrap}
+@media(max-width:500px){#hud{top:8px;left:8px;right:8px}.hud-card{font-size:12px;padding:8px}#controls{left:10px;bottom:14px;gap:5px}#controls button{width:46px;height:46px}#boost{right:12px;bottom:14px;width:62px;height:62px}#hint{bottom:88px}}
+</style>
 </head>
 <body>
+<div id="canvas-container"></div>
+<div id="loading">Cargando universo 3D...</div>
 
-    <!-- Pantalla de Inicio (Necesaria para desbloquear el audio en móviles) -->
-    <div id="start-screen">
-        <h1 style="font-size: 26px; margin-bottom: 10px; color: #00ffff;">MIDNIGHT SPARKLE</h1>
-        <p style="font-size: 14px; padding: 0 20px; color: #a3a3c2;">Observa la persecución mágica en el espacio profundo</p>
-        <button class="start-btn" onclick="startGame()">Comenzar Huida</button>
-    </div>
+<div id="start-screen" class="screen">
+  <h1>MIDNIGHT SPARKLE<br>PURSUIT</h1>
+  <p>Escapa de Midnight Sparkle a través del espacio profundo. ¡Sobrevive durante 60 segundos!</p>
+  <button id="start-btn">COMENZAR HUIDA</button>
+  <small style="color:#a99bcf">Usa las flechas para moverte y ⚡ para acelerar.</small>
+</div>
 
-    <!-- Interfaz de datos del juego (Muestra metros y segundos) -->
-    <div id="ui-layer">
-        <div>DISTANCIA: <span id="distance">8.0</span> m</div>
-        <div>TIEMPO: <span id="timer">0</span>s / 60s</div>
-    </div>
+<div id="hud">
+  <div class="hud-card">DISTANCIA: <span id="distance">8.0</span> m</div>
+  <div class="hud-card">TIEMPO: <span id="timer">0</span>s / 60s</div>
+</div>
+<div id="controls">
+  <button data-dir="left" aria-label="Mover izquierda">←</button>
+  <button data-dir="down" aria-label="Mover abajo">↓</button>
+  <button data-dir="up" aria-label="Mover arriba">↑</button>
+  <button data-dir="right" aria-label="Mover derecha">→</button>
+</div>
+<button id="boost" aria-label="Acelerón">⚡</button>
+<div id="hint">¡No dejes que te alcance!</div>
 
-    <!-- Controles de Flechas Superiores para desplazar la cámara -->
-    <div id="directional-controls">
-        <button class="nav-btn" onclick="moveCamera('left')">←</button>
-        <button class="nav-btn" onclick="moveCamera('down')">↓</button>
-        <button class="nav-btn" onclick="moveCamera('up')">↑</button>
-        <button class="nav-btn" onclick="moveCamera('right')">→</button>
-    </div>
+<div id="jumpscare-screen" class="screen">
+  <h1 style="color:#ff4bd8">¡TE ALCANZÓ!</h1>
+  <img id="jumpscare-image" src="jump.png" alt="Imagen de susto">
+  <button id="retry-scary">REINTENTAR</button>
+</div>
+<div id="win-screen" class="screen">
+  <h1>¡LOGRASTE ESCAPAR!</h1>
+  <p>Midnight Sparkle no pudo alcanzarte. ¡Has sobrevivido a la persecución!</p>
+  <button id="retry-win">JUGAR DE NUEVO</button>
+</div>
 
-    <!-- Botón de Rayo Inferior para ganar velocidad -->
-    <button id="speed-btn" onclick="useSpeedBoost()">⚡</button>
+<audio id="bg-music" src="back.mp3" loop preload="auto"></audio>
+<audio id="jump-music" src="jump.mp3" preload="auto"></audio>
 
-    <!-- Contenedor donde Three.js dibuja el universo 3D -->
-    <div id="canvas-container"></div>
+<!-- Three.js y GLTFLoader deben cargarse antes del código del juego -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const container = $('canvas-container');
+  const loading = $('loading');
+  let scene, camera, renderer, loader, player, monster, mixerPlayer, mixerMonster;
+  let gameActive = false, survivalTime = 0, enemyDistance = 8;
+  let lastTime = 0, elapsed = 0, laneX = 0, laneY = 0, boostCooldown = 0;
+  const clock = new THREE.Clock();
 
-    <!-- Capa del Jumpscare -->
-    <div id="jumpscare-screen">
-        <img id="jumpscare-image" src="scary.png" alt="Jumpscare">
-        <button class="restart-btn" onclick="location.reload()">Reintentar</button>
-    </div>
+  function showLoadError(message) {
+    loading.textContent = message;
+  }
 
-    <!-- Pantalla de Victoria -->
-    <div id="win-screen">
-        <h1>¡LOGRASTE ESCAPAR!</h1>
-        <p style="font-size: 16px; color: #fff; margin-bottom: 20px;">Midnight Sparkle no pudo alcanzarte.</p>
-        <button class="start-btn" onclick="location.reload()">Jugar de nuevo</button>
-    </div>
+  function init3D() {
+    if (!window.THREE) {
+      showLoadError('No se pudo cargar Three.js. Comprueba tu conexión a Internet y recarga.');
+      return false;
+    }
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x030012);
+    scene.fog = new THREE.FogExp2(0x08031c, 0.012);
 
-    <!-- Reproductores de Audio nativos -->
-    <audio id="bg-music" src="back.mp3" loop></audio>
-    <audio id="jump-music" src="jump.mp3" loop></audio>
+    camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 500);
+    camera.position.set(0, 3.5, 10);
+    camera.lookAt(0, 0, -2);
 
-    <!-- Librerías de gráficos 3D desde servidores CDN seguros -->
-    <script src="https://cloudflare.com"></script>
-    <script src="https://jsdelivr.net"></script>
-<!-- [El código JavaScript de programación va aquí (Partes 3, 4 y 5)] -->
+    try {
+      renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.7));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      container.appendChild(renderer.domElement);
+    } catch (e) {
+      showLoadError('Tu navegador no pudo iniciar los gráficos 3D (WebGL).');
+      return false;
+    }
+
+    scene.add(new THREE.HemisphereLight(0x9edfff, 0x17052e, 1.35));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    keyLight.position.set(4, 8, 5); scene.add(keyLight);
+    const purpleLight = new THREE.PointLight(0xb000ff, 3, 35);
+    purpleLight.position.set(0, 2, -7); scene.add(purpleLight);
+
+    // Campo de estrellas
+    const starCount = 1800, positions = new Float32Array(starCount * 3);
+    for(let i=0;i<starCount;i++){
+      positions[i*3]=(Math.random()-.5)*150;
+      positions[i*3+1]=(Math.random()-.5)*90;
+      positions[i*3+2]=-Math.random()*180+25;
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    const stars = new THREE.Points(starGeo,new THREE.PointsMaterial({color:0x8defff,size:.34}));
+    scene.add(stars); scene.userData.stars=stars;
+
+    // Plataforma luminosa
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(14,220,1,1),
+      new THREE.MeshStandardMaterial({color:0x11133f,emissive:0x073c8c,emissiveIntensity:.9,metalness:.35,roughness:.45})
+    );
+    floor.rotation.x=-Math.PI/2; floor.position.set(0,-1.35,-75); scene.add(floor);
+    for(let x=-6;x<=6;x+=3){
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(.045,.05,220),
+        new THREE.MeshBasicMaterial({color:x===0?0x00eaff:0x8b32ff}));
+      rail.position.set(x,-1.28,-75); scene.add(rail);
+    }
+
+    // Anillos de energía en el túnel
+    const ringMat = new THREE.MeshBasicMaterial({color:0x742cff,wireframe:true,transparent:true,opacity:.38});
+    for(let i=0;i<18;i++){
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(7,.035,6,48),ringMat);
+      ring.position.set(0,1,-i*10-4); scene.add(ring);
+    }
+
+    loader = new THREE.GLTFLoader();
+    loadModels();
+    loading.style.display='none';
+    animate();
+    return true;
+  }
+
+  function loadModels(){
+    loader.load('player.glb', gltf => {
+      player = gltf.scene;
+      player.scale.setScalar(.85);
+      player.position.set(0,-1.25,1.5);
+      scene.add(player);
+      if(gltf.animations && gltf.animations.length){
+        mixerPlayer=new THREE.AnimationMixer(player);
+        mixerPlayer.clipAction(gltf.animations[0]).play();
+      }
+    }, undefined, err => console.error('No se pudo cargar player.glb',err));
+
+    loader.load('monster.glb', gltf => {
+      monster = gltf.scene;
+      monster.scale.setScalar(.85);
+      monster.position.set(0,-1.25,1.5-enemyDistance);
+      scene.add(monster);
+      if(gltf.animations && gltf.animations.length){
+        mixerMonster=new THREE.AnimationMixer(monster);
+        mixerMonster.clipAction(gltf.animations[0]).play();
+      }
+    }, undefined, err => {
+      console.error('No se pudo cargar monster.glb',err);
+      // Respaldo visible si el modelo no carga
+      monster = new THREE.Mesh(new THREE.IcosahedronGeometry(.9,1),
+        new THREE.MeshStandardMaterial({color:0x8d00c9,emissive:0x5d00aa,emissiveIntensity:1.5}));
+      monster.position.set(0,-.2,1.5-enemyDistance); scene.add(monster);
+    });
+  }
+
+  function syncPositions(){
+    if(player) player.position.set(laneX,-1.25+laneY,1.5);
+    if(monster) monster.position.set(laneX*.35,-1.25+laneY*.35,1.5-enemyDistance);
+  }
+
+  function move(dir){
+    if(!gameActive) return;
+    const step=.65;
+    if(dir==='left') laneX=Math.max(-3,laneX-step);
+    if(dir==='right') laneX=Math.min(3,laneX+step);
+    if(dir==='up') laneY=Math.min(1.5,laneY+step);
+    if(dir==='down') laneY=Math.max(-.5,laneY-step);
+    syncPositions();
+  }
+
+  function boost(){
+    if(!gameActive || boostCooldown>0) return;
+    enemyDistance=Math.min(16,enemyDistance+3.5);
+    boostCooldown=2.5;
+    $('boost').style.opacity='.5';
+    setTimeout(()=>{$('boost').style.opacity='1'},700);
+    syncPositions();
+  }
+
+  function finish(won){
+    gameActive=false;
+    $('bg-music').pause();
+    if(won){
+      $('win-screen').style.display='flex';
+    }else{
+      $('jump-music').currentTime=0;
+      $('jump-music').play().catch(()=>{});
+      $('jumpscare-screen').style.display='flex';
+    }
+  }
+
+  function startGame(){
+    if(!renderer) {
+      if(!init3D()) return;
+    }
+    $('start-screen').style.display='none';
+    $('win-screen').style.display='none';
+    $('jumpscare-screen').style.display='none';
+    $('hud').style.display='flex';
+    $('controls').style.display='flex';
+    $('boost').style.display='flex';
+    $('hint').style.display='block';
+    $('distance').textContent='8.0'; $('timer').textContent='0';
+    survivalTime=0; enemyDistance=8; elapsed=0; laneX=0; laneY=0; boostCooldown=0;
+    gameActive=true;
+    $('jump-music').pause(); $('jump-music').currentTime=0;
+    $('bg-music').volume=.55; $('bg-music').currentTime=0;
+    $('bg-music').play().catch(()=>{});
+    syncPositions();
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    const delta=Math.min(clock.getDelta(),.05);
+    if(mixerPlayer) mixerPlayer.update(delta);
+    if(mixerMonster) mixerMonster.update(delta);
+    if(gameActive){
+      elapsed+=delta;
+      boostCooldown=Math.max(0,boostCooldown-delta);
+      survivalTime=Math.min(60,Math.floor(elapsed));
+      $('timer').textContent=survivalTime;
+      // La distancia se reduce gradualmente; el ritmo aumenta con el tiempo.
+      enemyDistance-=delta*(.13+survivalTime*.0018);
+      $('distance').textContent=Math.max(0,enemyDistance).toFixed(1);
+      if(scene.userData.stars) scene.userData.stars.rotation.z+=delta*.008;
+      if(monster) monster.rotation.y+=delta*.45;
+      syncPositions();
+      if(enemyDistance<=.75) finish(false);
+      else if(elapsed>=60) finish(true);
+    }
+    if(renderer && scene && camera) renderer.render(scene,camera);
+  }
+
+  $('start-btn').addEventListener('click',()=>{
+    if(!renderer){ if(!init3D()) return; }
+    startGame();
+  });
+  $('boost').addEventListener('click',boost);
+  document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>move(b.dataset.dir)));
+  $('retry-scary').addEventListener('click',()=>location.reload());
+  $('retry-win').addEventListener('click',()=>location.reload());
+  addEventListener('keydown',e=>{
+    const map={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+    if(map[e.key]){e.preventDefault();move(map[e.key]);}
+    if(e.code==='Space'){e.preventDefault();boost();}
+  });
+  addEventListener('resize',()=>{
+    if(camera && renderer){
+      camera.aspect=innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);
+    }
+  });
+  // Inicializa el escenario 3D detrás de la pantalla de inicio.
+  init3D();
+})();
+</script>
 </body>
 </html>
-<style>
-    body, html {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #02000A;
-        font-family: sans-serif;
-        user-select: none;
-        width: 100vw;
-        height: 100vh;
-    }
-
-    #canvas-container {
-        width: 100vw;
-        height: 100vh;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 1;
-    }
-
-    #start-screen, #win-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: radial-gradient(circle, #1a0033 0%, #020005 100%);
-        z-index: 50;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: #00ffff;
-        text-align: center;
-    }
-
-    #win-screen {
-        z-index: 60;
-        display: none;
-        color: #00ffcc;
-    }
-
-    .start-btn {
-        padding: 12px 30px;
-        background: linear-gradient(45deg, #7b00ff, #00d2ff);
-        border: 2px solid #00ffff;
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 25px;
-        box-shadow: 0 0 15px #00ffff;
-        text-transform: uppercase;
-        margin-top: 20px;
-    }
-
-    #ui-layer {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        color: #00ffff;
-        font-size: 16px;
-        z-index: 10;
-        text-shadow: 1px 1px 2px #000;
-        pointer-events: none;
-        display: none;
-        text-align: right;
-    }
-
-    #directional-controls {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        z-index: 10;
-        display: none;
-        gap: 8px;
-    }
-
-    .nav-btn {
-        width: 42px;
-        height: 42px;
-        background: rgba(0, 0, 0, 0.75);
-        border: 1px solid #00ffff;
-        color: #00ffff;
-        font-size: 18px;
-        cursor: pointer;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #speed-btn {
-        position: absolute;
-        bottom: 35px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 75px;
-        height: 75px;
-        background: linear-gradient(45deg, #ffcc00, #ff6600);
-        border: 2px solid #ffcc00;
-        color: white;
-        font-size: 30px;
-        cursor: pointer;
-        z-index: 10;
-        border-radius: 50%;
-        box-shadow: 0 0 15px #ffcc00;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #jumpscare-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #000;
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
-    }
-
-    #jumpscare-image {
-        width: 90vw;
-        height: 90vw;
-        max-width: 550px;
-        max-height: 550px;
-        object-fit: contain;
-    }
-
-    .restart-btn {
-        margin-top: 25px;
-        padding: 12px 35px;
-        background: linear-gradient(45deg, #ff0055, #990022);
-        border: 2px solid #ff0055;
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 20px;
-        text-transform: uppercase;
-        box-shadow: 0 0 10px #ff0055;
-    }
-</style>
-<script>
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x02000a, 0.02);
-
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimizado para pantallas táctiles
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    container.appendChild(renderer.domElement);
-
-    const bgMusic = document.getElementById('bg-music');
-    const jumpMusic = document.getElementById('jump-music');
-
-    // Ángulo de visión lateral fijo (Vista de perfil de los corredores)
-    let baseCamX = 6, baseCamY = 1.2, baseCamZ = 3;
-    camera.position.set(baseCamX, baseCamY, baseCamZ);
-    camera.lookAt(0, -0.2, 1.5);
-
-    // Render de partículas de estrellas de la galaxia
-    const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 1500;
-    const starPositions = new Float32Array(starsCount * 3);
-    
-    for(let i = 0; i < starsCount * 3; i += 3) {
-        const radius = 100 + Math.random() * 100;
-        const u = Math.random(); const v = Math.random();
-        const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0);
-        starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
-        starPositions[i+1] = radius * Math.sin(phi) * Math.sin(theta);
-        starPositions[i+2] = radius * Math.cos(phi);
-    }
-    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    const starField = new THREE.Points(starsGeometry, new THREE.PointsMaterial({ size: 0.8, color: 0x00ffff, transparent: true, opacity: 0.8 }));
-    scene.add(starField);
-
-    // Diseño del Puente de Magia Celeste
-    const bridgeMat = new THREE.MeshStandardMaterial({ 
-        color: 0x00bcff, emissive: 0x0033aa, emissiveIntensity: 2.0, transparent: true, opacity: 0.65 
-    });
-    const bridge = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 150), bridgeMat);
-    bridge.rotation.x = -Math.PI / 2;
-    bridge.position.set(0, -1.2, 0);
-    scene.add(bridge);
-
-    scene.add(new THREE.AmbientLight(0x0f0520, 0.6));
-    const monsterAura = new THREE.PointLight(0xff00ff, 4, 10);
-    scene.add(monsterAura);
-    const loader = new THREE.GLTFLoader();
-    let playerMesh = null; let monsterMesh = null;
-    let playerMixer = null; let monsterMixer = null;
-    const clock = new THREE.Clock();
-
-    // Traer jugador (player.glb) y añadirle la linterna al frente
-    loader.load('player.glb', function(gltf) {
-        playerMesh = gltf.scene;
-        playerMesh.position.set(0, -1.2, 2.5);
-        playerMesh.rotation.y = Math.PI; 
-        playerMesh.scale.set(0.7, 0.7, 0.7);
-        scene.add(playerMesh);
-
-        // Foco de la linterna frontal
-        const flashlight = new THREE.SpotLight(0xffffff, 6, 20, Math.PI / 6, 0.5, 1);
-        flashlight.position.set(0, 0.6, 0);
-        const targetObj = new THREE.Object3D();
-        targetObj.position.set(0, 0.6, 8);
-        playerMesh.add(targetObj);
-        flashlight.target = targetObj;
-        playerMesh.add(flashlight);
-
-        if(gltf.animations.length > 0) {
-            playerMixer = new THREE.AnimationMixer(playerMesh);
-            playerMixer.clipAction(gltf.animations).play();
-        }
-    });
-
-    // Traer al monstruo persecutor (monster.glb)
-    loader.load('monster.glb', function(gltf) {
-        monsterMesh = gltf.scene;
-        monsterMesh.scale.set(0.7, 0.7, 0.7);
-        scene.add(monsterMesh);
-
-        if(gltf.animations.length > 0) {
-            monsterMixer = new THREE.AnimationMixer(monsterMesh);
-            monsterMixer.clipAction(gltf.animations).play();
-        }
-        updatePositions();
-    }, undefined, function(e) {
-        // Objeto de respaldo si falla la carga local por CORS
-        monsterMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x4a0082}));
-        scene.add(monsterMesh);
-        updatePositions();
-    });
-    let enemyDistance = 8.0;
-    let survivalTime = 0;
-    let gameActive = false;
-
-    function updatePositions() {
-        if(playerMesh) playerMesh.position.set(0, -1.2, 2.0);
-        if(monsterMesh) {
-            monsterMesh.position.set(0, -1.2, 2.0 - enemyDistance);
-            monsterAura.position.set(0, 0, 2.0 - enemyDistance);
-        }
-    }
-
-    // Acción de las flechas superiores
-    function moveCamera(dir) {
-        if(!gameActive) return;
-        if(dir === 'left') camera.position.x -= 0.4;
-        if(dir === 'right') camera.position.x += 0.4;
-        if(dir === 'up') camera.position.y += 0.4;
-        if(dir === 'down') camera.position.y -= 0.4;
-        camera.lookAt(0, -0.2, 1.5);
-    }
-
-    // Acción del botón del Rayo (Gana velocidad y aleja al monstruo)
-    function useSpeedBoost() {
-        if(!gameActive || enemyDistance <= 0) return;
-        enemyDistance += 4.0;
-        if(enemyDistance > 15.0) enemyDistance = 15.0;
-    }
-
-    function startGame() {
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('ui-layer').style.display = 'block';
-        document.getElementById('directional-controls').style.display = 'flex';
-        document.getElementById('speed-btn').style.display = 'flex';
-        
-        gameActive = true;
-        bgMusic.play().catch(e => console.log("Audio play"));
-
-        const logicInterval = setInterval(() => {
-            if (!gameActive) { clearInterval(logicInterval); return; }
-            
-            let speed = 0.09 + (survivalTime * 0.002);
-            enemyDistance -= speed;
-            
-            document.getElementById('distance').innerText = Math.max(0, enemyDistance).toFixed(1);
-            updatePositions();
-
-            if(enemyDistance <= 0.7) {
-                gameActive = false;
-                bgMusic.pause();
-                jumpMusic.play().catch(e=>console.log(e));
-                document.getElementById('jumpscare-screen').style.display = 'flex';
-            }
-        }, 100);
-
-        const timeInterval = setInterval(() => {
-            if (!gameActive) { clearInterval(timeInterval); return; }
-            survivalTime++;
-            document.getElementById('timer').innerText = survivalTime;
-
-            if(survivalTime >= 60) {
-                gameActive = false;
-                bgMusic.pause();
-                document.getElementById('win-screen').style.display = 'flex';
-            }
-        }, 1000);
-    }
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        if (playerMixer) playerMixer.update(delta);
-        if (monsterMixer) monsterMixer.update(delta);
-
-        if (gameActive) {
-            starField.rotation.y += 0.0004;
-            bridgeMat.emissiveIntensity = 1.5 + Math.sin(performance.now() * 0.005) * 0.4;
-        } else if (document.getElementById('jumpscare-screen').style.display === 'flex') {
-            camera.position.x += (Math.random() - 0.5) * 0.15;
-            camera.position.y += (Math.random() - 0.5) * 0.15;
-        }
-        renderer.render(scene, camera);
-    }
-    animate();
-</script>
